@@ -6,6 +6,7 @@ import android.support.design.widget.NavigationView
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
@@ -18,6 +19,7 @@ import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.*
 import kotlinx.android.synthetic.main.content_main.*
+import java.lang.StringBuilder
 
 @Suppress("OverridingDeprecatedMember")
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -35,7 +37,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
         val toggle = ActionBarDrawerToggle(
-            this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
+                this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )
         drawer_layout.addDrawerListener(toggle)
         toggle.syncState()
@@ -70,10 +72,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     }
                 }
             }
+
             override fun onReceivedTitle(view: WebView?, title: String?) {
                 super.onReceivedTitle(view, title)
-                    toolbar.title = title!!
-                    searchView.queryHint = title
+                toolbar.title = title!!
+                searchView.queryHint = title
             }
         }
 
@@ -101,14 +104,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             override fun onQueryTextSubmit(p0: String?): Boolean {
                 Thread {
-                    val url: String
+                    val tmp: String
+                    val url: StringBuilder
                     if (p0 != null) {
-                        url = if (!p0.startsWith("https://") || !p0.startsWith("http://")) {
-                            "https://$p0"
+                        tmp = "${if (!p0.contains("://")) {
+                            "https://"
                         } else {
-                            p0
+                            ""
+                        }}$p0"
+                        url = StringBuilder(tmp)
+                        if (!tmp.contains("www.") && tmp.contains(".com") &&
+                                (tmp.startsWith("https") || tmp.startsWith("http"))) {
+                            url.insert(url.indexOf("://") + 3, "www.")
                         }
-                        runOnUiThread { webView.loadUrl(url) }
+                        Log.e("origin + after", "$p0 + $url")
+                        runOnUiThread { webView.loadUrl(url.toString()) }
+
                     }
                 }.start()
                 return false
